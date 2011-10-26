@@ -1,29 +1,52 @@
 //COMP 361
-//PA2
+//PA1
 //Team 8
 //Angela Gabereau 4867815
 
 // Based on: Skeleton program for GLUT applications.
 
 // Link with: opengl32.lib, glu32.lib, glut32.lib.
-#include <stdlib.h> 
+
+#include <GL/glut.h>
+#include <math.h>
+#include <iostream>
+
+#include "strstream"
+#include <stdio.h>
+#include <string.h>
+
+using std::strstreambuf;
+using std::istrstream;
+using std::ostrstream;
+using std::strstream;
+#include <iomanip>
+
+using namespace std;
+//COMP 361
+//PA2
+//Team 8
+//Angela Gabereau 4867815
+
+// Based on: Skeleton program for GLUT applications.
+
+// Link with: opengl32.lib, glu32.lib, glut32.lib
+/*
+#include <stdlib.h>
 #include <GL/glut.h>
 #include <math.h>
 #include <iostream>
 
 #include <stdio.h>
 #include <string.h>
-/*
-using std::strstreambuf;
-using std::istrstream;
-using std::ostrstream;
-using std::strstream;*/
+
 #include <iomanip>
 
 #define ESC 27
 #define M_PI 3.14159265
-
+*/
 using namespace std;
+
+#define ESC 27
 
 // Initial size of graphics window.
 const int WIDTH  = 1200;
@@ -40,11 +63,11 @@ int height = HEIGHT;
 double xMouse = 0.5;
 double yMouse = 0.5;
 
-unsigned char key = ' ';	// Last key pressed 
+unsigned char key = ' ';	// Last key pressed
 
 // Bounds of viewing frustum.
 double nearPlane =  5;
-double farPlane  = 50;
+double farPlane  = 100;
 
 // Viewing angle.
 double fovy = 40.0;
@@ -59,8 +82,8 @@ float moveX = 0.0f;
 float moveY = 0.0f;
 float tileSpacing = 2.0f;
 int map[10][10];
-int mapX = 10;
-int mapY = 10;
+int mapX = 28;
+int mapY = 28;
 
 // Vectors for colours and properties of materials.
 const GLfloat off[] = { 0.0, 0.0, 0.0, 0.0 };
@@ -69,14 +92,19 @@ const GLfloat red[] = { 0.8f, 0.0, 0.0, 1.0 };
 const GLfloat blue[] = { 0.0, 0.2f, 1.0, 1.0 };
 const GLfloat white[] = { 1.0, 1.0, 1.0, 1.0 };
 const GLfloat black[] = { 0.0, 0.0, 0.0, 1.0 };
+const GLfloat ambientlightColor[] = { 0.3, 0.5, 0.3, 1.0 };
+const GLfloat streetlightColor[] = { 1.0, 1.0, 1.0, 0.0 };
 const GLfloat green[] = { 0.0, 1.0, 0.0, 1.0 };
 const GLfloat polished[] = { 100.0 };
 const GLfloat dull[] = { 0.0 };
+
 
 int light1Switch = 1;
 int light2Switch = 1;
 int light3Switch = 1;
 int light4Switch = 1;
+
+bool fillModeSwitch = true;
 
 
 // Translation values for light.
@@ -141,7 +169,7 @@ void digitalStrut()
 	glRotatef(180.0f,0.0f,1.0f,0.0f); //Flip triangle
     glTranslatef(0.0f,-2.5f,0.0f); //move it down
 
-    
+
     glScalef( 1.0, 0.5, 1.0 );
     triangle();
     glPopMatrix();*/
@@ -204,6 +232,10 @@ void whiteCube()
     glVertex3f( 1.0f,-1.0f, 0.0f);		// Bottom Right
     glVertex3f(-1.0f,-1.0f, 0.0f);		// Bottom Left
     glEnd();					// done with the polygon
+  /*  if(fillModeSwitch)
+        glutSolidCube(1.0);
+    else
+        glutWireCube(1.0);*/
 }
 
 void circle(float x, float y, float r, int segments)
@@ -222,33 +254,21 @@ void circle(float x, float y, float r, int segments)
 
 void DrawPacmanHalf(GLfloat r)
 {
-    int i, j;
-    const int scaley=48;
-    const int scalex=48;
-    GLfloat v[scalex*scaley][3];
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, off);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
+	glMaterialfv(GL_FRONT, GL_SHININESS, polished);
 
-    for (i=0; i<scalex; ++i)
-    {
-        for (j=0; j<scaley; ++j)
-        {
-            v[i*scaley+j][0]=r*cos(j*2*M_PI/scaley)*cos(i*M_PI/(2*scalex));
-            v[i*scaley+j][1]=r*sin(i*M_PI/(2*scalex));
-            v[i*scaley+j][2]=r*sin(j*2*M_PI/scaley)*cos(i*M_PI/(2*scalex));
-        }
-    }
+    GLdouble eqn[4] = {0.0, 1.0, 0.0, 0.0};
+	glClipPlane (GL_CLIP_PLANE0, eqn);
+    glEnable (GL_CLIP_PLANE0);
+    if(fillModeSwitch)
+        glutSolidSphere(r,24,24);
+    else
+        glutWireSphere(r,24,24);
 
-    glBegin(GL_QUADS);
-    for (i=0; i<scalex-1; ++i)
-    {
-        for (j=0; j<scaley; ++j)
-        {
-            glVertex3fv(v[i*scaley+j]);
-            glVertex3fv(v[i*scaley+(j+1)%scaley]);
-            glVertex3fv(v[(i+1)*scaley+(j+1)%scaley]);
-            glVertex3fv(v[(i+1)*scaley+j]);
-        }
-    }
-    glEnd();
+    glDisable (GL_CLIP_PLANE0);
+
 }
 
 void DrawPacman(GLfloat xPos, GLfloat yPos, GLfloat zPos, GLfloat r)
@@ -256,19 +276,11 @@ void DrawPacman(GLfloat xPos, GLfloat yPos, GLfloat zPos, GLfloat r)
     glPushMatrix();
     glTranslatef(xPos,yPos+r+r/4,zPos); //Place him at specified location, hovering
 	glPushMatrix(); //Top
-   // glColor3f(1.0f,1.0f,0.0f);//Yellow Paint Brush.				// Drawing the Pacman
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, yellow);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-	glMaterialfv(GL_FRONT, GL_SHININESS, polished);
 	DrawPacmanHalf(r);
     glPopMatrix();
-	
+
     glPushMatrix(); //Bottom
     glRotatef(200.0,1.0f,0.0f,0.0f);
-   // glColor3f(1.0f,1.0f,0.0f);//Yellow Paint Brush.
-	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, yellow);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
-	glMaterialfv(GL_FRONT, GL_SHININESS, polished);
     DrawPacmanHalf(r); //Bottom
     glPopMatrix();
 
@@ -278,9 +290,15 @@ void DrawPacman(GLfloat xPos, GLfloat yPos, GLfloat zPos, GLfloat r)
 	glMaterialfv(GL_FRONT, GL_SHININESS, polished);
    // glColor3f(0.0f,1.0f,0.0f); //Grreen Paint Brush
     glTranslatef(-0.3f,0.6f,0.7f);
-    glutSolidSphere(0.15,24,24);
+    if(fillModeSwitch)
+     glutSolidSphere(0.15,24,24);
+    else
+        glutWireSphere(0.15,24,24);
     glTranslatef(0.6f,0.0f,0.0f);
-    glutSolidSphere(0.15,24,24);
+    if(fillModeSwitch)
+     glutSolidSphere(0.15,24,24);
+    else
+        glutWireSphere(0.15,24,24);
     glPopMatrix();
 
     glPushMatrix();
@@ -298,7 +316,7 @@ void DrawGhost(GLfloat xPos, GLfloat yPos, GLfloat zPos)
 {
 	glColor4f(1.0f,1.0f,1.0f, 0.3f);
     glPushMatrix();
- 
+
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, off);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, off);
 	glMaterialfv(GL_FRONT, GL_SHININESS, off);
@@ -307,6 +325,10 @@ void DrawGhost(GLfloat xPos, GLfloat yPos, GLfloat zPos)
 	glTranslatef(xPos,yPos,zPos);
     quadratic=gluNewQuadric();
     gluCylinder(quadratic,0.6f,0.3f,1.8f,32,32);
+    if(fillModeSwitch)
+        glutSolidCone(1.0,1.8,24,24);
+    else
+        glutWireCone(1.0,1.8,24,24);
     glPopMatrix();
 
 }
@@ -315,7 +337,7 @@ void DrawGhost(GLfloat xPos, GLfloat yPos, GLfloat zPos)
 void DrawAllGhosts()
 {
     glPushMatrix();
-    DrawGhost(3.0f,0.0f,0.0f); 
+    DrawGhost(3.0f,0.0f,0.0f);
     DrawGhost(6.0f,0.0f,0.0f);
     DrawGhost(9.0f,0.0f,0.0f);
     glPopMatrix();
@@ -351,6 +373,8 @@ void DrawFloor()
 
 void DrawPellet(GLfloat xPos, GLfloat yPos, GLfloat zPos)
 {
+      GLdouble eqn[4] = {0.0, 1.0, 0.0, 0.0};
+
     // Drawing Pellets
     glPushMatrix();
    // glColor3f(1.0f,0.0f,0.0f); //Red paint brush.
@@ -358,7 +382,12 @@ void DrawPellet(GLfloat xPos, GLfloat yPos, GLfloat zPos)
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, red);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, white);
 	glMaterialfv(GL_FRONT, GL_SHININESS, polished);
-    glutSolidSphere(0.3,24,24);
+
+    if(fillModeSwitch)
+     glutSolidSphere(0.3,24,24);
+    else
+        glutWireSphere(0.3,24,24);
+
     glPopMatrix();
 }
 
@@ -406,15 +435,14 @@ void DrawAxis()
     glVertex3f(0, 0, 10);
     glEnd();
 }
-int spot(int light, double a, double b, double c, double d, double e, double f)
+int streetLight(int light, double a, double b, double c, double d, double e, double f)
 {
 	//Source: http://www.cs.montana.edu/files/techreports/2008/Museboyina.pdf
 	/*
 	a, b and c -- x, y and z co-ordinates for light position
 	d, e and f -- x, y and z co-ordinates for spot light position
 	*/
-	GLfloat mat_specular[] = { 0.3, 1.0, 0.3, 1.0 };
-	GLfloat mat_shininess[] = { 50.0 };
+
 	GLfloat light_position[] = { a,b,c, 1.0 };
 	GLfloat spotDir[] = { d,e,f };
 
@@ -428,33 +456,39 @@ int spot(int light, double a, double b, double c, double d, double e, double f)
     glVertex3f(d, e, f);
 	glEnd();
 
-	glLightfv(light,GL_SPECULAR,green);
-	glLightfv(light,GL_AMBIENT_AND_DIFFUSE,green);
+	glLightfv(light,GL_SPECULAR,streetlightColor);
+	glLightfv(light,GL_AMBIENT_AND_DIFFUSE,streetlightColor);
 	glLightfv(light,GL_POSITION,light_position);
 
 	// Definig spotlight attributes
-	glLightf(light,GL_SPOT_CUTOFF,96.0);
-	glLightf(light,GL_SPOT_EXPONENT,2.0);
+	glLightf(light,GL_SPOT_CUTOFF,25.0);
+	//glLightf(light,GL_SPOT_EXPONENT,2.5);
 	glLightfv(light,GL_SPOT_DIRECTION,spotDir);
 
     glPushMatrix();
 	//Lightbulb
     glTranslated(a,b,c);
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, green);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, green);
-	glMaterialfv(GL_FRONT, GL_SHININESS, green);
-    glutSolidSphere(0.4,24,24);
+	glMaterialfv(GL_FRONT, GL_SPECULAR,green);
+	glMaterialfv(GL_FRONT, GL_SHININESS,dull);
+
+    if(fillModeSwitch)
+        glutSolidSphere(0.4,24,24);
+    else
+        glutWireSphere(0.4,24,24);
+
 	//Lampost
 	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, blue);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, off);
 	glMaterialfv(GL_FRONT, GL_SHININESS, dull);
 	glTranslated(0.0,b/-2.0,0.0);
 	glScalef(0.4f, 4.0f,0.4f );
-	glutSolidCube(1.0);
-    glPopMatrix();
 
-	glPushMatrix();
-    
+
+    if(fillModeSwitch)
+        glutSolidCube(1.0);
+    else
+        glutWireCube(1.0);
 
     glPopMatrix();
 
@@ -468,26 +502,27 @@ void display ()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glTranslatef(-10.0f,0.0f,-50.0f);  //We move back 30 steps, so  we can see what is going on.
-    glRotatef(30.0f,1.0f,0.0f,0.0f);
+    glTranslatef(-28.0f,-20.0f,-100.0f);  //We move back 30 steps, so  we can see what is going on.
+    glRotatef(90.0f,1.0f,0.0f,0.0f);
 //	DrawAxis();
-	
-	DrawPacman(0.0f, 0.0f, 0.0f,1.0f);
+
+	DrawPacman(5.0f, 0.0f, 5.0f,1.0f);
 	DrawPellets();
 	DrawFloor();
 
 	//Draw lights
-	spot(GL_LIGHT1,0.0,4.0,0.0,4.0,0.0,4.0); //back left
-	spot(GL_LIGHT2,0.0,4.0,20.0,4.0,0.0,16.0);//front left
-	spot(GL_LIGHT3,20.0,4.0,0.0,16.0,0.0,4.0);//back right
-	spot(GL_LIGHT4,20.0,4.0,20.0,16.0,0.0,16.0);//front right
+	streetLight(GL_LIGHT1,0.0,4.0,0.0,4.0,0.0,4.0); //back left
+    streetLight(GL_LIGHT2,0.0,4.0,56.0,4.0,0.0,52.0);//front left
+	streetLight(GL_LIGHT3,56.0,4.0,0.0,52.0,0.0,4.0);//back right
+	streetLight(GL_LIGHT4,56.0,4.0,56.0,52.0,0.0,52.0);//front right
 
 	glDisable(GL_LIGHTING);
 	DrawAllGhosts();
 	glEnable(GL_LIGHTING);
 
-	glFlush();
-    glutSwapBuffers();
+glFlush ();
+glutSwapBuffers();
+
 }
 
 void mouseMovement (int mx, int my)
@@ -525,9 +560,9 @@ void reshapeMainWindow (int newWidth, int newHeight)
 void initMap()
 {
     //Initialize the pills
-    for(int i=0; i<10; i++)
+    for(int i=0; i<28; i++)
     {
-        for(int j=0; j<10; j++)
+        for(int j=0; j<28; j++)
         {
                 map[i][j]=(i+j)%2; //Place a pill on every second square.
 
@@ -536,7 +571,7 @@ void initMap()
 }
 
 
-// Display some useful remarks in the Xterm window. 
+// Display some useful remarks in the Xterm window.
 
 void help () {
 	printf("Press a key to select a property.\n");
@@ -547,32 +582,35 @@ void help () {
 	printf(" f       flat shading			\n\n");
 	printf(" d       day			\n\n");
 	printf(" n       night			\n\n");
+    printf(" y       all lightposts			\n\n");
 	printf(" u       lightpost 1			\n\n");
 	printf(" i       lightpost 2			\n\n");
 	printf(" o       lightpost 3			\n\n");
 	printf(" p       lightpost 4			\n\n");
 }
 
-// Respond to a keystroke.  Some responses are processed here; the default 
+// Respond to a keystroke.  Some responses are processed here; the default
 // action is to record the keystroke and use it in the display callback function.
- 
+
 void keys (unsigned char thiskey, int x, int y) {
 	//wireframe, smooth, flat from http://mindfuck.de-brauwer.be/articles/polygon/index.php
 
 	switch (thiskey) {
 		case ESC:
 			exit(0);
-		case 'h':		// Display help in text window 
+		case 'h':		// Display help in text window
 			help();
 			break;
 		case 'w':
 			cout << "Wireframe mode on " << endl;
 			glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+            fillModeSwitch = false;
 			glutPostRedisplay();
 			break;
 		case 'f':
 			cout << "Fill mode on " << endl;
 			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+			fillModeSwitch = true;
 			glutPostRedisplay();
 			break;
 		case 's':
@@ -593,6 +631,29 @@ void keys (unsigned char thiskey, int x, int y) {
 			cout << "Night time " << endl;
 			glDisable(GL_LIGHT0);
 			break;
+
+		case 'y':
+			if(light1Switch){
+				glDisable(GL_LIGHT1);
+				glDisable(GL_LIGHT2);
+				glDisable(GL_LIGHT3);
+				glDisable(GL_LIGHT4);
+				light1Switch = 0;
+				light2Switch = 0;
+				light3Switch = 0;
+				light4Switch = 0;
+			}else{
+				glEnable(GL_LIGHT1);
+				glEnable(GL_LIGHT2);
+				glEnable(GL_LIGHT3);
+				glEnable(GL_LIGHT4);
+				light1Switch = 1;
+				light2Switch = 1;
+				light3Switch = 1;
+				light4Switch = 1;
+			}
+			break;
+
 		case 'u':
 			if(light1Switch){
 				glDisable(GL_LIGHT1);
@@ -629,7 +690,7 @@ void keys (unsigned char thiskey, int x, int y) {
 				light4Switch = 1;
 			}
 			break;
-		default:		// Save key value for display() 
+		default:		// Save key value for display()
 			key = thiskey;
 			break;
 	}
@@ -653,21 +714,17 @@ int main (int argc, char **argv)
     glutIdleFunc(display);
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
-	glEnable( GL_BLEND ); 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable( GL_BLEND );
 	glClearColor(0.0,0.0,0.0,0.0);
-		
+
 	// Initialize the light.
 	glEnable(GL_LIGHTING);
 	//Ambient Light
 	glEnable(GL_LIGHT0);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, white);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, white);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, white);
-
-	//Street Lights
-	glEnable(GL_LIGHT1);
-	glEnable(GL_LIGHT2);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientlightColor);
+//(GL_LIGHT0, GL_DIFFUSE, ambient);
+//	glLightfv(GL_LIGHT0, GL_SPECULAR, ambient);
 	glEnable(GL_LIGHT3);
 	glEnable(GL_LIGHT4);
 
